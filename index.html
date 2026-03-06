@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MiniFeed – Your Space</title>
+  
+  <style>
+    :root {
+      --bg-start: #0d001a;
+      --bg-end: #1a0033;
+      --card-bg: rgba(40, 20, 60, 0.45);
+      --text: #f0e6ff;
+      --accent: #c084fc;
+      --accent-hover: #b065f0;
+      --gray: #b0a0c0;
+      --border: rgba(200, 140, 255, 0.18);
+      --blur: blur(16px);
+      --error: #ff6b6b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, var(--bg-start), var(--bg-end));
+      color: var(--text);
+      min-height: 100vh;
+      background-attachment: fixed;
+    }
+    .app { 
+      max-width: 720px; 
+      margin: 0 auto; 
+      padding: 1rem; 
+      padding-bottom: 7rem;
+    }
+    header {
+      text-align: center;
+      padding: 3rem 0 1.5rem;
+    }
+    h1 {
+      font-size: 3.2rem;
+      background: linear-gradient(90deg, #a78bfa, #f472b6);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.4rem;
+    }
+    .tagline { color: var(--gray); font-size: 1.15rem; }
+
+    .compose, .post {
+      background: var(--card-bg);
+      backdrop-filter: var(--blur);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 1.6rem;
+      margin: 1.8rem 0;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .post:hover { transform: translateY(-3px); transition: transform 0.25s; }
+
+    .post-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 1rem;
+    }
+    .avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(45deg, var(--accent), #ec4899);
+    }
+    .username { font-weight: 700; font-size: 1.18rem; }
+    .handle { color: var(--gray); font-size: 0.98rem; }
+    .post-text { font-size: 1.12rem; line-height: 1.55; white-space: pre-wrap; }
+    .post-actions {
+      display: flex;
+      gap: 2.8rem;
+      margin-top: 1.3rem;
+      color: var(--gray);
+    }
+    .action {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .action:hover { color: var(--accent); }
+    .like.active i { color: #f472b6 !important; }
+
+    .compose textarea {
+      width: 100%;
+      min-height: 110px;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 1.18rem;
+      resize: vertical;
+      outline: none;
+    }
+    .compose-actions { text-align: right; margin-top: 1rem; }
+    .post-btn {
+      background: linear-gradient(45deg, var(--accent), #ec4899);
+      color: white;
+      border: none;
+      padding: 0.9rem 2.2rem;
+      border-radius: 999px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(192,132,252,0.4);
+    }
+    .post-btn:hover { opacity: 0.94; transform: scale(1.03); }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(20,10,30,0.8);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      padding: 1rem 0;
+      z-index: 100;
+    }
+    .nav-item {
+      color: var(--gray);
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.22s;
+    }
+    .nav-item:hover, .nav-item.active { color: var(--accent); transform: scale(1.12); }
+    .nav-item i { font-size: 1.7rem; display: block; margin-bottom: 0.35rem; }
+
+    .modal {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    .modal.hidden { display: none; }
+    .modal-content {
+      background: var(--card-bg);
+      backdrop-filter: var(--blur);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      width: 90%; max-width: 420px;
+      padding: 2.5rem 1.8rem;
+      box-shadow: 0 20px 70px rgba(0,0,0,0.55);
+    }
+    .modal h2 { text-align: center; margin-bottom: 2rem; font-size: 1.75rem; }
+    .form-group input {
+      width: 100%; padding: 1.1rem 1.3rem;
+      border-radius: 16px; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.05);
+      color: white; font-size: 1.08rem;
+      margin-bottom: 1.3rem;
+    }
+    .btn {
+      width: 100%; padding: 1.1rem; border-radius: 999px;
+      font-weight: 600; cursor: pointer; font-size: 1.12rem;
+    }
+    .btn-primary { background: linear-gradient(45deg, var(--accent), #ec4899); color: white; border: none; }
+    .btn-secondary { background: transparent; border: 1px solid var(--accent); color: var(--accent); margin-top: 1.1rem; }
+    .error { color: var(--error); text-align: center; margin: 1rem 0; font-size: 0.98rem; }
+
+    .empty-feed {
+      text-align: center;
+      padding: 10rem 1.5rem 5rem;
+      color: var(--gray);
+      font-size: 1.35rem;
+      opacity: 0.9;
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body class="not-logged-in">
+
+<div id="authModal" class="modal">
+  <div class="modal-content">
+    <h2 id="modalTitle">Welcome to MiniFeed</h2>
+    
+    <div class="form-group">
+      <input type="text" id="usernameInput" placeholder="Username" autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <input type="password" id="passwordInput" placeholder="Password" />
+    </div>
+
+    <div id="errorMsg" class="error"></div>
+
+    <button id="mainActionBtn" class="btn btn-primary">Sign in</button>
+    <button id="toggleModeBtn" class="btn btn-secondary">Create new space</button>
+
+    <div id="toggleLink" style="color:var(--accent); text-align:center; margin-top:1.5rem; cursor:pointer;">
+      New here? Join MiniFeed
+    </div>
+  </div>
+</div>
+
+<div class="app">
+  <header>
+    <h1>MiniFeed</h1>
+    <p class="tagline">Your thoughts • Your flow</p>
+  </header>
+
+  <div id="composeSection" class="compose hidden">
+    <textarea id="postContent" placeholder="What's on your mind..."></textarea>
+    <div class="compose-actions">
+      <button id="submitPostBtn" class="post-btn">Share</button>
+    </div>
+  </div>
+
+  <div id="feedContainer"></div>
+  <div id="emptyState" class="empty-feed">Log in and let your thoughts flow freely ✨</div>
+</div>
+
+<div class="bottom-nav">
+  <div class="nav-item active"><i class="fa-solid fa-home"></i>Home</div>
+  <div class="nav-item"><i class="fa-solid fa-bell"></i>Alerts</div>
+  <div class="nav-item"><i class="fa-solid fa-envelope"></i>Messages</div>
+  <div id="logoutTrigger" class="nav-item"><i class="fa-solid fa-user"></i>Profile</div>
+</div>
+
+<script>
+// ──────────────────────────────────────────────────────────────
+// Variables
+// ──────────────────────────────────────────────────────────────
+const modal         = document.getElementById('authModal');
+const title         = document.getElementById('modalTitle');
+const mainBtn       = document.getElementById('mainActionBtn');
+const toggleBtn     = document.getElementById('toggleModeBtn');
+const toggleLink    = document.getElementById('toggleLink');
+const errorDisplay  = document.getElementById('errorMsg');
+const userField     = document.getElementById('usernameInput');
+const passField     = document.getElementById('passwordInput');
+const postArea      = document.getElementById('postContent');
+const postButton    = document.getElementById('submitPostBtn');
+const compose       = document.getElementById('composeSection');
+const feed          = document.getElementById('feedContainer');
+const empty         = document.getElementById('emptyState');
+const profileIcon   = document.getElementById('logoutTrigger');
+
+let isLogin = true;
+let currentUser = null;
+let allPosts = [];
+
+// ──────────────────────────────────────────────────────────────
+// Auth logic
+// ──────────────────────────────────────────────────────────────
+function switchAuthMode() {
+  isLogin = !isLogin;
+  title.textContent       = isLogin ? "Welcome back" : "Create your space";
+  mainBtn.textContent     = isLogin ? "Sign in" : "Join";
+  toggleBtn.textContent   = isLogin ? "Create new space" : "I already have one";
+  toggleLink.textContent  = isLogin ? "New here? Join MiniFeed" : "Back to sign in";
+  errorDisplay.textContent = '';
+}
+
+toggleBtn.addEventListener('click', switchAuthMode);
+toggleLink.addEventListener('click', switchAuthMode);
+
+function getStoredUsers() {
+  return JSON.parse(localStorage.getItem('miniFeedUsers') || '[]');
+}
+
+function saveUsers(data) {
+  localStorage.setItem('miniFeedUsers', JSON.stringify(data));
+}
+
+function showAuthError(text) {
+  errorDisplay.textContent = text;
+}
+
+mainBtn.addEventListener('click', () => {
+  const username = userField.value.trim();
+  const password = passField.value.trim();
+
+  if (!username || !password) {
+    showAuthError('Both fields are required');
+    return;
+  }
+
+  let users = getStoredUsers();
+
+  if (isLogin) {
+    // Attempt login
+    const match = users.find(u => u.username === username && u.password === password);
+    if (match) {
+      currentUser = { username };
+      localStorage.setItem('currentMiniFeedUser', JSON.stringify(currentUser));
+      completeLogin();
+    } else {
+      showAuthError('Incorrect username or password');
+    }
+  } else {
+    // Register
+    if (users.some(u => u.username === username)) {
+      showAuthError('Username already taken');
+      return;
+    }
+    users.push({ username, password });
+    saveUsers(users);
+    currentUser = { username };
+    localStorage.setItem('currentMiniFeedUser', JSON.stringify(currentUser));
+    completeLogin();
+  }
+});
+
+function completeLogin() {
+  document.body.classList.remove('not-logged-in');
+  document.body.classList.add('logged-in');
+  modal.classList.add('hidden');
+  compose.classList.remove('hidden');
+  empty.textContent = "Your space is quiet... share something? 🌌";
+  postArea.placeholder = `What's on your mind, @${currentUser.username}?`;
+  renderFeed();
+}
+
+// Logout
+profileIcon.addEventListener('click', () => {
+  if (currentUser && confirm("Log out now?")) {
+    localStorage.removeItem('currentMiniFeedUser');
+    currentUser = null;
+    allPosts = [];
+    document.body.classList.remove('logged-in');
+    document.body.classList.add('not-logged-in');
+    modal.classList.remove('hidden');
+    compose.classList.add('hidden');
+    feed.innerHTML = '';
+    empty.textContent = "Log in and let your thoughts flow freely ✨";
+    userField.value = '';
+    passField.value = '';
+  }
+});
+
+// Auto-login if session exists
+const savedSession = localStorage.getItem('currentMiniFeedUser');
+if (savedSession) {
+  currentUser = JSON.parse(savedSession);
+  completeLogin();
+}
+
+// ──────────────────────────────────────────────────────────────
+// Posting & Feed
+// ──────────────────────────────────────────────────────────────
+function makePostElement(data) {
+  const el = document.createElement('div');
+  el.className = 'post';
+  el.innerHTML = `
+    <div class="post-header">
+      <div class="avatar"></div>
+      <div>
+        <div class="username">${data.username}</div>
+        <div class="handle">@${data.username}</div>
+      </div>
+    </div>
+    <div class="post-text">${data.text.replace(/\n/g, '<br>')}</div>
+    <div class="post-actions">
+      <div class="action"><i class="fa-regular fa-comment"></i> 0</div>
+      <div class="action"><i class="fa-solid fa-retweet"></i> 0</div>
+      <div class="action like"><i class="fa-regular fa-heart"></i> <span>0</span></div>
+    </div>
+  `;
+
+  const likeArea = el.querySelector('.like');
+  likeArea.addEventListener('click', () => {
+    const heart = likeArea.querySelector('i');
+    const counter = likeArea.querySelector('span');
+    let num = parseInt(counter.textContent) || 0;
+
+    if (heart.classList.contains('fa-regular')) {
+      heart.classList.replace('fa-regular', 'fa-solid');
+      likeArea.classList.add('active');
+      num++;
+    } else {
+      heart.classList.replace('fa-solid', 'fa-regular');
+      likeArea.classList.remove('active');
+      num = Math.max(0, num - 1);
+    }
+    counter.textContent = num;
+  });
+
+  return el;
+}
+
+function renderFeed() {
+  feed.innerHTML = '';
+  if (allPosts.length === 0) {
+    const placeholder = document.createElement('div');
+    placeholder.className = 'empty-feed';
+    placeholder.textContent = currentUser ? "Your space is quiet... share something? 🌌" : "Log in to start posting";
+    feed.appendChild(placeholder);
+  } else {
+    allPosts.forEach(post => {
+      feed.prepend(makePostElement(post)); // newest first
+    });
+  }
+}
+
+postButton.addEventListener('click', () => {
+  if (!currentUser) return;
+  const content = postArea.value.trim();
+  if (!content) return;
+
+  allPosts.unshift({
+    username: currentUser.username,
+    text: content,
+    created: Date.now()
+  });
+
+  renderFeed();
+  postArea.value = '';
+});
+</script>
+</body>
+</html>
