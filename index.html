@@ -210,6 +210,24 @@
 .tab-content {
   min-height: 200px;
 }
+.admin-badge {
+  color: #1da1f2;           /* Twitter/X blue */
+  font-size: 1.1em;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.username {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.admin-badge:hover {
+  color: #0d95e8;
+  transform: scale(1.15);
+  transition: all 0.15s ease;
+}
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -418,8 +436,14 @@ async function loadProfileData() {
     .single();
 
   if (profile) {
-    if (profileUsername) profileUsername.textContent = profile.username || currentUser.username;
-    if (profileHandle) profileHandle.textContent = '@' + (profile.username || currentUser.username);
+  const username = profile.username || currentUser.username;
+  const isAdmin = profile.is_admin === true;
+  const adminBadge = isAdmin ? '<i class="fa-solid fa-check-circle admin-badge" title="Admin"></i>' : '';
+
+  if (profileUsername) {
+    profileUsername.innerHTML = username + adminBadge;
+  }
+  if (profileHandle) profileHandle.textContent = '@' + username;
     if (document.getElementById('profileBio')) {
       document.getElementById('profileBio').textContent = profile.bio || 'No bio yet';
     }
@@ -629,6 +653,7 @@ document.getElementById('sendChatBtn')?.addEventListener('click', async () => {
 document.getElementById('sendNewMessageBtn')?.addEventListener('click', async () => {
   const toUsernameInput = document.getElementById('newMessageUsername');
   const contentInput = document.getElementById('newMessageContent');
+  
 
   const toUsername = toUsernameInput?.value?.trim() || '';
   const content = contentInput?.value?.trim() || '';
@@ -786,18 +811,21 @@ navMessages?.addEventListener('click', () => {
   // Database Functions – use supabaseClient
   // ──────────────────────────────────────────────────────────────
   async function loadPosts() {
-    if (!currentUser) return;
-    const { data, error } = await supabaseClient
-      .from('posts')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) {
-      console.error("Error loading posts:", error);
-      return;
-    }
-    allPosts = data || [];
-    renderFeed();
+  if (!currentUser) return;
+  const { data, error } = await supabaseClient
+    .from('posts')
+    .select(`
+      *,
+      profiles!posts_user_id_fkey (username, is_admin)
+    `)
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error("Error loading posts:", error);
+    return;
   }
+  allPosts = data || [];
+  renderFeed();
+}
 
   async function savePost(content) {
     if (!currentUser) return;
@@ -834,7 +862,10 @@ navMessages?.addEventListener('click', () => {
 
   const { data } = await supabaseClient
     .from('posts')
-    .select('*')
+    .select(`
+      *,
+      profiles!posts_user_id_fkey (username, is_admin)
+    `)
     .eq('user_id', currentUser.id)
     .order('created_at', { ascending: false });
 
@@ -848,32 +879,6 @@ navMessages?.addEventListener('click', () => {
     const el = makePostElement(post);
     container.appendChild(el);
   });
-}
-
-async function loadLikedPosts() {
-  const container = document.getElementById('profileLikes');
-  container.innerHTML = '<p>Loading liked posts...</p>';
-
-  const { data: likes } = await supabaseClient
-    .from('post_likes')
-    .select('post_id')
-    .eq('user_id', currentUser.id);
-
-  if (!likes?.length) {
-    container.innerHTML = '<p class="empty-feed">No liked posts yet.</p>';
-    return;
-  }
-
-  const postIds = likes.map(l => l.post_id);
-
-  const { data: posts } = await supabaseClient
-    .from('posts')
-    .select('*')
-    .in('id', postIds)
-    .order('created_at', { ascending: false });
-
-  container.innerHTML = '';
-  posts?.forEach(post => container.appendChild(makePostElement(post)));
 }
 
 // Following & Followers (very basic – just usernames)
@@ -925,6 +930,47 @@ async function loadFollowers() {
   });
 }
 
+//──────────────────────────────────────────────────────────────
+//Liked posts
+//──────────────────────────────────────────────────────────────
+async function loadLikedPosts() {
+  const container = document.getElementById('profileLikes');
+  container.innerHTML = '<p>Loading liked posts...</p>';
+
+  const { data: likes } = await supabaseClient
+    .from('post_likes')
+    .select('post_id')
+    .eq('user_id', currentUser.id);
+
+  if (!likes?.length) {
+    container.innerHTML = '<p class="empty-feed">No liked posts yet.</p>';
+    return;
+  }
+
+  const postIds = likes.map(l => l.post_id);
+
+  const { data: posts, error } = await supabaseClient
+    .from('posts')
+    .select(`
+      *,
+      profiles!posts_user_id_fkey (username, is_admin)
+    `)
+    .in('id', postIds)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error("Error loading liked posts:", error);
+    container.innerHTML = '<p>Error loading liked posts</p>';
+    return;
+  }
+
+  container.innerHTML = '';
+  posts?.forEach(post => {
+    const el = makePostElement(post);
+    container.appendChild(el);
+  });
+}
+
   // ──────────────────────────────────────────────────────────────
   // UI Functions (unchanged)
   // ──────────────────────────────────────────────────────────────
@@ -948,7 +994,9 @@ async function loadFollowers() {
         <div class="post-meta">
           <div class="avatar"></div>
           <div>
-            <div class="username">${data.username}</div>
+            <div class="username">
+  ${data.username}
+  ${data.profiles?.is_admin ? '<i class="fa-solid fa-check-circle admin-badge" title="Admin"></i>' : ''}</div>
             <div class="handle">@${data.username} · <span class="timestamp">${timeAgo}</span></div>
           </div>
         </div>
@@ -1139,5 +1187,4 @@ async function loadFollowers() {
 });
 </script>
 </body>
-
 </html>
