@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MiniFeed – Your Space</title>
+
+    <link rel="stylesheet" href="./css/styles.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+  </head>
+
+  <body class="not-logged-in">
+    <!-- Auth Modal -->
+    <div id="authModal" class="modal">
+      <div class="modal-content">
+        <h2 id="modalTitle">Welcome to MiniFeed</h2>
+
+        <div class="form-group">
+          <input
+            type="text"
+            id="usernameInput"
+            placeholder="Username"
+            autocomplete="off"
+          />
+        </div>
+        <div class="form-group">
+          <input type="password" id="passwordInput" placeholder="Password" />
+        </div>
+
+        <div id="errorMsg" class="error"></div>
+
+        <button id="mainActionBtn" class="btn btn-primary" type="button">
+          Sign in
+        </button>
+        <button id="toggleModeBtn" class="btn btn-secondary" type="button">
+          Create new space
+        </button>
+
+        <div id="toggleLink" class="toggle-link">New here? Join MiniFeed</div>
+      </div>
+    </div>
+
+    <div class="app">
+      <header>
+        <h1>MiniFeed</h1>
+        <p class="tagline">Your thoughts • Your flow</p>
+      </header>
+
+      <main>
+        <!-- Home -->
+        <div id="homeView" class="view active">
+          <div id="composeSection" class="compose hidden">
+            <textarea
+              id="postContent"
+              placeholder="What's on your mind..."
+            ></textarea>
+            <div class="compose-actions">
+              <button id="submitPostBtn" class="post-btn" type="button">
+                Share
+              </button>
+            </div>
+          </div>
+
+          <div id="feedContainer"></div>
+          <div id="emptyState" class="empty-feed">
+            Log in and let your thoughts flow freely ✨
+          </div>
+        </div>
+
+        <!-- Alerts -->
+        <div id="alertsView" class="view">
+          <div class="empty-feed">
+            <h2>Alerts</h2>
+            <p>No notifications yet...</p>
+          </div>
+        </div>
+
+        <!-- Messages -->
+        <div id="messagesView" class="view">
+          <div class="compose" style="margin: 1rem 0">
+            <h3 style="margin-bottom: 1rem">Messages</h3>
+
+            <input
+              type="text"
+              id="newMessageUsername"
+              class="input"
+              placeholder="Username to message..."
+            />
+
+            <textarea
+              id="newMessageContent"
+              class="textarea"
+              placeholder="Type a message..."
+            ></textarea>
+
+            <div class="right" style="margin-top: 0.8rem">
+              <button id="sendNewMessageBtn" class="post-btn" type="button">
+                Send
+              </button>
+            </div>
+          </div>
+
+          <div id="conversationsList" style="margin-top: 1.5rem"></div>
+
+          <div id="chatView" class="hidden" style="margin-top: 1.5rem">
+            <div class="chat-header">
+              <h4 id="chatWith">Chat with @username</h4>
+              <button id="backToListBtn" class="link-btn" type="button">
+                Back to list
+              </button>
+            </div>
+
+            <div id="messagesContainer" class="messages-container"></div>
+
+            <div class="chat-compose">
+              <textarea
+                id="chatInput"
+                class="textarea"
+                placeholder="Type your message..."
+              ></textarea>
+              <button id="sendChatBtn" class="post-btn" type="button">
+                Send
+              </button>
+            </div>
+          </div>
+
+          <div id="noMessages" class="empty-feed" style="margin-top: 4rem">
+            No conversations yet. Start by messaging someone!
+          </div>
+        </div>
+
+        <!-- Profile -->
+        <div id="profileView" class="view">
+          <div class="post profile-card">
+            <div class="avatar profile-avatar"></div>
+
+            <h2 id="profileUsername">Your Profile</h2>
+            <p id="profileHandle">@username</p>
+            <p id="profileBio" class="profile-bio">No bio yet</p>
+
+            <div class="profile-stats">
+              <div>
+                <strong id="followingCount">0</strong><br /><span
+                  >Following</span
+                >
+              </div>
+              <div>
+                <strong id="followersCount">0</strong><br /><span
+                  >Followers</span
+                >
+              </div>
+              <div>
+                <strong id="likesCount">0</strong><br /><span>Likes</span>
+              </div>
+            </div>
+
+            <div class="profile-tabs">
+              <button class="tab-btn active" data-tab="posts" type="button">
+                Posts
+              </button>
+              <button class="tab-btn" data-tab="likes" type="button">
+                Likes
+              </button>
+              <button class="tab-btn" data-tab="following" type="button">
+                Following
+              </button>
+              <button class="tab-btn" data-tab="followers" type="button">
+                Followers
+              </button>
+              <button
+                class="tab-btn"
+                data-tab="settings"
+                type="button"
+                id="settingsTabBtn"
+              >
+                Settings
+              </button>
+            </div>
+
+            <div id="profilePosts" class="tab-content"></div>
+            <div id="profileLikes" class="tab-content hidden"></div>
+            <div id="profileFollowing" class="tab-content hidden"></div>
+            <div id="profileFollowers" class="tab-content hidden"></div>
+            <div
+              id="profileSettings"
+              class="tab-content hidden"
+              style="padding: 1rem"
+            >
+              <h3>Settings</h3>
+              <p>Coming soon: change password, bio, avatar...</p>
+              <button id="logoutBtn" class="post-btn danger" type="button">
+                Log Out
+              </button>
+            </div>
+
+            <button
+              id="backToFeedBtn"
+              class="post-btn back hidden"
+              type="button"
+            >
+              ← Back to Feed
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <div class="bottom-nav">
+      <div id="navHome" class="nav-item active">
+        <i class="fa-solid fa-home"></i>Home
+      </div>
+      <div id="navAlerts" class="nav-item">
+        <i class="fa-solid fa-bell"></i>Alerts
+      </div>
+      <div id="navMessages" class="nav-item">
+        <i class="fa-solid fa-envelope"></i>Messages
+      </div>
+      <div id="navProfile" class="nav-item">
+        <i class="fa-solid fa-user"></i>Profile
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+    <script src="./js/config.js"></script>
+    <script src="./js/state.js"></script>
+    <script src="./js/utils.js"></script>
+    <script src="./js/ui.js"></script>
+    <script src="./js/dom.js"></script>
+    <script src="./js/supabaseClient.js"></script>
+    <script src="./js/postCard.js"></script>
+    <script src="./js/feed.js"></script>
+    <script src="./js/profile.js"></script>
+    <script src="./js/messages.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/app.js"></script>
+  </body>
+</html>
